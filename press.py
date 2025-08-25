@@ -4,6 +4,7 @@ import whisper
 import soundfile as sf
 import tempfile
 from pynput import keyboard  # pip install pynput
+import pyperclip  # pip install pyperclip
 
 # Load Whisper model
 model = whisper.load_model("small")
@@ -44,11 +45,16 @@ def on_release(key):
                 sf.write(wav_path, full_audio, samplerate)
 
             result = model.transcribe(wav_path, fp16=False)
+            text = result["text"].strip()
+            pyperclip.copy(text)
+
             print("\n=== TRANSCRIPTION ===")
-            print(result["text"].strip())
+            print(text)
             print("=====================\n")
+            print("📋 Copied to clipboard!")
 
     if key == keyboard.Key.esc:
+        print("\n👋 Exiting...")
         return False
     return None
 
