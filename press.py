@@ -1,3 +1,5 @@
+import subprocess
+
 import sounddevice as sd
 import numpy as np
 import whisper
@@ -13,7 +15,12 @@ samplerate = 16000
 channels = 1
 recording = []
 is_recording = False
-min_duration_sec = 2.0  # 🔹 Only transcribe if > 2 seconds
+min_duration_sec = 1.5  # 🔹 Only transcribe if > 2 seconds
+
+
+def send_notification(title, message):
+    # Uses notify-send (Linux) to send a desktop notification
+    subprocess.run(['notify-send', title, message])
 
 def on_press(key):
     global is_recording, recording
@@ -58,12 +65,10 @@ def on_release(key):
                 print(text)
                 print("=====================\n")
                 print("📋 Copied to clipboard!")
+                send_notification("Transcription Complete ✅", text)
             else:
                 print(f"⚠️ Audio too short ({duration:.2f}s). Ignored.")
 
-    if key == keyboard.Key.esc:
-        print("\n👋 Exiting...")
-        return False
     return None
 
 
