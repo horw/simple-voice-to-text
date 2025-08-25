@@ -13,6 +13,7 @@ samplerate = 16000
 channels = 1
 recording = []
 is_recording = False
+min_duration_sec = 2.0  # 🔹 Only transcribe if > 2 seconds
 
 def on_press(key):
     global is_recording, recording
@@ -32,26 +33,33 @@ def on_press(key):
 def on_release(key):
     global is_recording
     if key == keyboard.Key.space and is_recording:
-        print("⏹ Stopped recording. Transcribing...")
+        print("⏹ Stopped recording.")
         is_recording = False
         listener.stream.stop()
         listener.stream.close()
 
         if recording:
             full_audio = np.concatenate(recording, axis=0)
+            duration = len(full_audio) / samplerate  # 🔹 seconds
 
-            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
-                wav_path = f.name
-                sf.write(wav_path, full_audio, samplerate)
+            if duration >= min_duration_sec:
+                print(f"⏳ Audio length: {duration:.2f}s → Transcribing...")
+                with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
+                    wav_path = f.name
+                    sf.write(wav_path, full_audio, samplerate)
 
-            result = model.transcribe(wav_path, fp16=False)
-            text = result["text"].strip()
-            pyperclip.copy(text)
+                result = model.transcribe(wav_path, fp16=False)
+                text = result["text"].strip()
 
-            print("\n=== TRANSCRIPTION ===")
-            print(text)
-            print("=====================\n")
-            print("📋 Copied to clipboard!")
+                # 🔹 Copy to clipboard
+                pyperclip.copy(text)
+
+                print("\n=== TRANSCRIPTION ===")
+                print(text)
+                print("=====================\n")
+                print("📋 Copied to clipboard!")
+            else:
+                print(f"⚠️ Audio too short ({duration:.2f}s). Ignored.")
 
     if key == keyboard.Key.esc:
         print("\n👋 Exiting...")
